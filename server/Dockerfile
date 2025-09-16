@@ -1,21 +1,29 @@
-# ----------- build stage -----------
-FROM node:20-alpine AS build
+# -------- build stage --------
+FROM node:20-bullseye-slim AS build
 WORKDIR /app
-COPY package.json pnpm-lock.yaml* package-lock.json* yarn.lock* ./
-RUN if [ -f pnpm-lock.yaml ]; then npm i -g pnpm && pnpm i;     elif [ -f yarn.lock ]; then yarn; else npm i; fi
+
+# Faster, reproducible installs
+COPY package*.json ./
+RUN npm ci
+
 COPY tsconfig.json ./
 COPY prisma ./prisma
-RUN npx prisma generate || true
-COPY src ./src
-RUN npm run build || true
+RUN npx prisma generate
 
-# ----------- runtime stage -----------
-FROM node:20-alpine
+COPY src ./src
+RUN npm run build
+
+# -------- runtime stage --------
+FROM node:20-bullseye-slim
 WORKDIR /app
 ENV NODE_ENV=production
-COPY --from=build /app/package.json ./package.json
+
+# (опционально) чтобы curl'ом пинговть health в контейнере
+RUN apt-get update && apt-get install -y ca-certificates && rm -rf /var/lib/apt/lists/*
+
 COPY --from=build /app/node_modules ./node_modules
 COPY --from=build /app/dist ./dist
 COPY --from=build /app/prisma ./prisma
+
 EXPOSE 8080
 CMD ["node", "dist/index.js"]
