@@ -5,7 +5,6 @@ generator client {
 datasource db {
   provider  = "postgresql"
   url       = env("DATABASE_URL")  // Pooler (IPv4)
-  directUrl = env("DIRECT_URL")    // Прямое подключение для миграций/транзакций
 }
 
 model User {
