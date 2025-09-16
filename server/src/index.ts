@@ -1,5 +1,5 @@
 import Fastify from 'fastify';
-import cors from 'cors';
+import fastifyCors from '@fastify/cors';
 import { verifyInitData, parseUserFromInitData } from './telegram.js';
 import { prisma } from './db.js';
 
@@ -9,16 +9,11 @@ const CORS_ORIGIN = process.env.CORS_ORIGIN || '*';
 
 const app = Fastify({ logger: true });
 
-// CORS (через Express-пакет, оборачиваем вручную)
-app.addHook('onRequest', async (req, reply) => {
-  // минимальный CORS
-  reply.header('Access-Control-Allow-Origin', CORS_ORIGIN);
-  reply.header('Access-Control-Allow-Headers', 'Content-Type, Authorization');
-  reply.header('Access-Control-Allow-Methods', 'GET, POST, OPTIONS');
-  if (req.method === 'OPTIONS') {
-    reply.code(200);
-    return reply.send();
-  }
+// CORS через плагин
+await app.register(fastifyCors, {
+  origin: CORS_ORIGIN === '*' ? true : CORS_ORIGIN,
+  methods: ['GET', 'POST', 'OPTIONS'],
+  allowedHeaders: ['Content-Type', 'Authorization']
 });
 
 app.get('/health', async () => ({ ok: true }));
@@ -48,11 +43,9 @@ app.post('/auth/verify', async (request, reply) => {
       create: {
         telegramId: String(tgUser.id),
         username: tgUser.username || null,
-        Wallet: { create: { balance: 100 } } // приветственный бонус
+        Wallet: { create: { balance: 100 } }
       },
-      update: {
-        username: tgUser.username || null
-      },
+      update: { username: tgUser.username || null },
       include: { Wallet: true }
     });
 
