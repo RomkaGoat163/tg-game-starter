@@ -1,16 +1,13 @@
 {
-  "name": "tg-game-server",
-  "version": "0.1.0",
-  "type": "module",
-  "private": true,
+  "name": "server",
+  "version": "1.0.0",
+  "main": "dist/index.js",
   "scripts": {
-    "dev": "ts-node-dev --respawn --transpile-only src/index.ts",
-    "build": "tsc -p tsconfig.json",
+    "dev": "ts-node-dev --respawn src/index.ts",
+    "build": "tsc",
     "start": "node dist/index.js",
-    "prisma:generate": "prisma generate",
-    "prisma:migrate": "prisma migrate dev --name init"
+    "prisma": "prisma"
   },
- {
   "dependencies": {
     "@prisma/client": "^5.17.0",
     "@fastify/cors": "^9.0.0",
