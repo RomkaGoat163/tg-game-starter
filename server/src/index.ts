@@ -4,26 +4,32 @@ import fastifyCors from '@fastify/cors';
 import { verifyInitData, parseUserFromInitData } from './telegram.js';
 import { prisma } from './db.js';
 
-const port = Number(process.env.PORT || 8080);
-const host = process.env.HOST || '0.0.0.0';
+const PORT = Number(process.env.PORT || 8080);
+const HOST = process.env.HOST || '0.0.0.0';
 const BOT_TOKEN = process.env.BOT_TOKEN || '';
 const CORS_ORIGIN = process.env.CORS_ORIGIN || '*';
 
-const app = Fastify({ logger: true });
+process.on('unhandledRejection', (err) => {
+  console.error('UNHANDLED_REJECTION', err);
+});
+process.on('uncaughtException', (err) => {
+  console.error('UNCAUGHT_EXCEPTION', err);
+});
 
-async function build() {
-  // CORS
+async function bootstrap() {
+  const app = Fastify({ logger: true });
+
   await app.register(fastifyCors, {
     origin: CORS_ORIGIN === '*' ? true : CORS_ORIGIN,
     methods: ['GET', 'POST', 'OPTIONS'],
     allowedHeaders: ['Content-Type', 'Authorization'],
   });
 
-  // Быстрые проверки
-  app.get('/', async () => ({ ok: true, at: new Date().toISOString() }));
+  // Пробные эндпоинты, чтобы проверить доступность
   app.get('/health', async () => ({ ok: true }));
+  app.get('/', async () => ({ ok: true, at: new Date().toISOString() }));
 
-  // Твой эндпоинт авторизации (без изменений по логике)
+  // Твой эндпоинт
   app.post('/auth/verify', async (request, reply) => {
     try {
       const body = request.body as any;
@@ -31,8 +37,7 @@ async function build() {
       if (!initData || !BOT_TOKEN) {
         reply.code(400);
         return { ok: false, error: 'NO_INITDATA_OR_BOT_TOKEN' };
-        }
-
+      }
       const ok = verifyInitData(initData, BOT_TOKEN);
       if (!ok) {
         reply.code(401);
@@ -40,7 +45,7 @@ async function build() {
       }
 
       const tgUser = parseUserFromInitData(initData);
-      if (!tgUser || !tgUser.id) {
+      if (!tgUser?.id) {
         reply.code(400);
         return { ok: false, error: 'NO_USER' };
       }
@@ -67,17 +72,17 @@ async function build() {
       return { ok: false, error: 'SERVER_ERROR' };
     }
   });
-}
 
-async function start() {
   try {
-    await build();
-    await app.listen({ port, host });
-    app.log.info(`Server listening on http://${host}:${port}`);
+    await app.listen({ port: PORT, host: HOST });
+    app.log.info(`Server listening on http://${HOST}:${PORT}`);
   } catch (err) {
-    app.log.error(err);
+    app.log.error({ err }, 'FAILED_TO_LISTEN');
     process.exit(1);
   }
 }
 
-start();
+bootstrap().catch((e) => {
+  console.error('BOOTSTRAP_ERROR', e);
+  process.exit(1);
+});
