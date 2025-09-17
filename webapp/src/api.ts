@@ -1,19 +1,12 @@
-export const API_URL: string =
-  (import.meta as any).env?.VITE_API_URL || 'http://localhost:8080';
+const base = (import.meta.env.VITE_API_URL || '').replace(/\/$/, '');
 
-async function request<T>(method: 'GET' | 'POST', path: string, body?: unknown): Promise<T> {
-  const res = await fetch(`${API_URL}${path}`, {
-    method,
+export async function postJSON<T = any>(path: string, body: any, init?: RequestInit): Promise<T> {
+  const res = await fetch(`${base}${path}`, {
+    method: 'POST',
     headers: { 'Content-Type': 'application/json' },
-    body: body ? JSON.stringify(body) : undefined,
+    body: JSON.stringify(body),
+    ...init,
   });
-  if (!res.ok) {
-    const text = await res.text().catch(() => '');
-    throw new Error(`HTTP ${res.status}: ${text || res.statusText}`);
-  }
-  return res.json() as Promise<T>;
-}
-
-export function postJSON<T>(path: string, body: unknown): Promise<T> {
-  return request<T>('POST', path, body);
+  if (!res.ok) throw new Error(`${res.status} ${res.statusText}`);
+  return res.json();
 }
