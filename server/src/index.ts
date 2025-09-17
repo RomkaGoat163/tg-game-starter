@@ -2,18 +2,15 @@
 import Fastify from 'fastify';
 import fastifyCors from '@fastify/cors';
 import { verifyInitData, parseUserFromInitData } from './telegram.js';
+import { prisma } from './db.js';
 
 const PORT = Number(process.env.PORT || 8080);
 const HOST = process.env.HOST || '0.0.0.0';
 const BOT_TOKEN = process.env.BOT_TOKEN || '';
 const CORS_ORIGIN = process.env.CORS_ORIGIN || '*';
 
-process.on('unhandledRejection', (err) => {
-  console.error('UNHANDLED_REJECTION', err);
-});
-process.on('uncaughtException', (err) => {
-  console.error('UNCAUGHT_EXCEPTION', err);
-});
+process.on('unhandledRejection', (err) => console.error('UNHANDLED_REJECTION', err));
+process.on('uncaughtException', (err) => console.error('UNCAUGHT_EXCEPTION', err));
 
 async function bootstrap() {
   const app = Fastify({ logger: true });
@@ -24,16 +21,25 @@ async function bootstrap() {
     allowedHeaders: ['Content-Type', 'Authorization'],
   });
 
-  // Простые проверки доступности
-  app.get('/health', async () => ({ ok: true, mode: 'no-db' }));
+  app.get('/health', async () => ({ ok: true, mode: 'db' }));
   app.get('/', async () => ({ ok: true, at: new Date().toISOString() }));
 
-  // Верификация Telegram initData без записи в БД
+  // Быстрый тест коннекта к БД
+  app.get('/db', async (req, reply) => {
+    try {
+      const users = await prisma.user.count();
+      return { ok: true, users };
+    } catch (e: any) {
+      req.log.error(e);
+      reply.code(500);
+      return { ok: false, error: 'DB_ERROR', message: e?.message };
+    }
+  });
+
   app.post('/auth/verify', async (request, reply) => {
     try {
       const body = request.body as any;
       const { initData } = body || {};
-
       if (!initData || !BOT_TOKEN) {
         reply.code(400);
         return { ok: false, error: 'NO_INITDATA_OR_BOT_TOKEN' };
@@ -51,10 +57,21 @@ async function bootstrap() {
         return { ok: false, error: 'NO_USER' };
       }
 
-      // НИЧЕГО не пишем в БД — просто возвращаем данные
+      const user = await prisma.user.upsert({
+        where: { telegramId: String(tgUser.id) },
+        create: {
+          telegramId: String(tgUser.id),
+          username: tgUser.username || null,
+          Wallet: { create: { balance: 100 } },
+        },
+        update: { username: tgUser.username || null },
+        include: { Wallet: true },
+      });
+
       return {
         ok: true,
-        user: { id: tgUser.id, username: tgUser.username || null },
+        user: { id: user.id, username: user.username },
+        balance: user.Wallet?.balance ?? 0,
       };
     } catch (e) {
       request.log.error(e);
