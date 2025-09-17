@@ -1,4 +1,5 @@
 const base = (import.meta.env.VITE_API_URL || '').replace(/\/$/, '');
+console.log('API_BASE =', base); // <— временно, для проверки
 
 export async function postJSON<T = any>(path: string, body: any, init?: RequestInit): Promise<T> {
   const res = await fetch(`${base}${path}`, {
