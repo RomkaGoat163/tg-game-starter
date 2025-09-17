@@ -1,24 +1,26 @@
+// server/prisma/schema.prisma
+datasource db {
+  provider  = "postgresql"
+  url       = env("DATABASE_URL")
+  directUrl = env("DIRECT_URL") // для миграций/долгих запросов
+}
+
 generator client {
   provider = "prisma-client-js"
 }
 
-datasource db {
-  provider  = "postgresql"
-  url       = env("DATABASE_URL")
-}
-
-
 model User {
-  id          String   @id @default(cuid())
-  telegramId  String   @unique
-  username    String?
-  createdAt   DateTime @default(now())
-  banned      Boolean  @default(false)
-  Wallet      Wallet?
+  id         String   @id @default(cuid())
+  telegramId String   @unique
+  username   String?
+  createdAt  DateTime @default(now())
+  Wallet     Wallet?
 }
 
 model Wallet {
-  userId  String @id
-  balance Int    @default(0)
-  user    User   @relation(fields: [userId], references: [id])
+  id        String   @id @default(cuid())
+  userId    String   @unique
+  balance   Int      @default(100)
+  updatedAt DateTime @updatedAt
+  User      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
 }
