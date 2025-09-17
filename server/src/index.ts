@@ -2,7 +2,6 @@
 import Fastify from 'fastify';
 import fastifyCors from '@fastify/cors';
 import { verifyInitData, parseUserFromInitData } from './telegram.js';
-import { prisma } from './db.js';
 
 const PORT = Number(process.env.PORT || 8080);
 const HOST = process.env.HOST || '0.0.0.0';
@@ -25,19 +24,21 @@ async function bootstrap() {
     allowedHeaders: ['Content-Type', 'Authorization'],
   });
 
-  // Пробные эндпоинты, чтобы проверить доступность
-  app.get('/health', async () => ({ ok: true }));
+  // Простые проверки доступности
+  app.get('/health', async () => ({ ok: true, mode: 'no-db' }));
   app.get('/', async () => ({ ok: true, at: new Date().toISOString() }));
 
-  // Твой эндпоинт
+  // Верификация Telegram initData без записи в БД
   app.post('/auth/verify', async (request, reply) => {
     try {
       const body = request.body as any;
       const { initData } = body || {};
+
       if (!initData || !BOT_TOKEN) {
         reply.code(400);
         return { ok: false, error: 'NO_INITDATA_OR_BOT_TOKEN' };
       }
+
       const ok = verifyInitData(initData, BOT_TOKEN);
       if (!ok) {
         reply.code(401);
@@ -50,21 +51,10 @@ async function bootstrap() {
         return { ok: false, error: 'NO_USER' };
       }
 
-      const user = await prisma.user.upsert({
-        where: { telegramId: String(tgUser.id) },
-        create: {
-          telegramId: String(tgUser.id),
-          username: tgUser.username || null,
-          Wallet: { create: { balance: 100 } },
-        },
-        update: { username: tgUser.username || null },
-        include: { Wallet: true },
-      });
-
+      // НИЧЕГО не пишем в БД — просто возвращаем данные
       return {
         ok: true,
-        user: { id: user.id, username: user.username },
-        balance: user.Wallet?.balance ?? 0,
+        user: { id: tgUser.id, username: tgUser.username || null },
       };
     } catch (e) {
       request.log.error(e);
