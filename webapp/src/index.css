@@ -1,0 +1,163 @@
+/* ========== БАЗА / ТЕМА ========== */
+:root {
+  /* Включаем корректные системные цвета (скроллбары, формы, селекторы) */
+  color-scheme: light dark;
+
+  /* Телеграм не всегда отдаёт все переменные, поэтому даём осознанные фоллбеки */
+  --bg: var(--tg-theme-bg-color, #ffffff);
+  --text: var(--tg-theme-text-color, #222222);
+  --muted: var(--tg-theme-hint-color, #8a8a8a);
+  --link: var(--tg-theme-link-color, #0a84ff);
+
+  --button-bg: var(--tg-theme-button-color, #2ea6ff);
+  --button-text: var(--tg-theme-button-text-color, #ffffff);
+
+  /* Некоторые клиенты присылают дополнительные цвета — используем, если есть */
+  --secondary-bg: var(--tg-theme-secondary-bg-color, rgba(0,0,0,0.04));
+  --destructive: var(--tg-theme-destructive-text-color, #d21c1c);
+  --subtitle: var(--tg-theme-subtitle-text-color, #6b6b6b);
+}
+
+/* Сброс и базовая типографика */
+*,
+*::before,
+*::after { box-sizing: border-box; }
+
+html, body, #root {
+  height: 100%;
+}
+
+body {
+  margin: 0;
+  background: var(--bg);
+  color: var(--text);
+  font-family: system-ui, -apple-system, Segoe UI, Roboto, Inter, Arial, sans-serif;
+  line-height: 1.5;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+
+  /* Безопасная зона для iOS-ноучей/динамик-острова */
+  padding: env(safe-area-inset-top, 0) env(safe-area-inset-right, 0)
+           env(safe-area-inset-bottom, 0) env(safe-area-inset-left, 0);
+}
+
+/* Ссылки/разделители/кнопки цвета темы Telegram */
+a { color: var(--link); text-decoration: none; }
+a:hover { text-decoration: underline; }
+
+hr {
+  margin: 16px 0;
+  border: 0;
+  border-top: 1px solid var(--muted);
+  opacity: .3;
+}
+
+/* ========== КОНТЕЙНЕРЫ / ВЕРСТКА ========== */
+.container {
+  width: 100%;
+  max-width: 720px;
+  margin: 0 auto;
+  padding: 16px;
+  padding-bottom: calc(16px + env(safe-area-inset-bottom, 0));
+}
+
+.section { margin: 16px 0; }
+
+.card {
+  background: var(--secondary-bg);
+  border-radius: 12px;
+  padding: 16px;
+  border: 1px solid rgba(0,0,0,0.06);
+}
+
+@media (prefers-color-scheme: dark) {
+  .card {
+    border-color: rgba(255,255,255,0.08);
+    background: rgba(255,255,255,0.06);
+  }
+}
+
+/* ========== ЗАГОЛОВКИ / ТЕКСТ ========== */
+h1, h2, h3 {
+  margin: 0 0 12px;
+  line-height: 1.2;
+  font-weight: 700;
+}
+
+h1 { font-size: 22px; }
+h2 { font-size: 18px; color: var(--subtitle); }
+h3 { font-size: 16px; }
+
+.muted { color: var(--muted); }
+.mono  { font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; }
+
+/* ========== БЕЙДЖИ СТАТУСОВ ========== */
+.badge {
+  display: inline-block;
+  padding: 2px 8px;
+  border-radius: 999px;
+  font-size: 12px;
+  line-height: 20px;
+  vertical-align: middle;
+  background: var(--secondary-bg);
+  border: 1px solid rgba(0,0,0,0.08);
+}
+.badge--ok   { background: rgba(46, 160, 67, .12);  color: #1a7f37; border-color: rgba(46,160,67,.3); }
+.badge--warn { background: rgba(240, 191, 76, .16); color: #916400; border-color: rgba(240,191,76,.35); }
+.badge--err  { background: rgba(210, 28, 28, .15);  color: #b10e0e; border-color: rgba(210,28,28,.35); }
+
+/* ========== КНОПКИ ========== */
+.btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+
+  height: 40px;
+  padding: 0 14px;
+  border-radius: 10px;
+
+  background: var(--secondary-bg);
+  color: var(--text);
+  border: 1px solid rgba(0,0,0,0.08);
+
+  cursor: pointer;
+  user-select: none;
+  -webkit-tap-highlight-color: transparent;
+  transition: transform .02s ease, opacity .15s ease, background .2s ease, border-color .2s ease;
+}
+.btn:active { transform: translateY(1px) scale(0.99); }
+
+.btn--primary {
+  background: var(--button-bg);
+  color: var(--button-text);
+  border-color: transparent;
+}
+
+.btn--ghost {
+  background: transparent;
+  border-color: rgba(0,0,0,0.12);
+}
+
+.btn--full { width: 100%; }
+
+/* ========== ИНПУТЫ ========== */
+.input {
+  width: 100%;
+  height: 40px;
+  padding: 0 12px;
+  border-radius: 10px;
+  border: 1px solid rgba(0,0,0,0.12);
+  background: transparent;
+  color: var(--text);
+  outline: none;
+}
+.input::placeholder { color: var(--muted); }
+
+/* ========== УТИЛИТЫ ========== */
+.row { display: flex; gap: 8px; align-items: center; }
+.space { height: 12px; }
+.center { display: grid; place-items: center; }
+
+/* Изображения по ширине, без «выстрелов» за контейнер */
+img, svg, video { display: block; max-width: 100%; height: auto; }
