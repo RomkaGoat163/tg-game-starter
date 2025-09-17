@@ -1,25 +1,19 @@
-// Минимальные типы, чтобы TS не ругался
-type TelegramWebApp = {
-  initData?: string;
-  ready?: () => void;
-  expand?: () => void;
-};
-
-declare global {
-  interface Window {
-    Telegram?: {
-      WebApp?: TelegramWebApp;
-    };
-  }
-}
-
-export function getInitData(): string {
-  return window?.Telegram?.WebApp?.initData || '';
-}
-
 export function webAppReady() {
+  const tg = (window as any).Telegram?.WebApp;
+  if (tg) tg.ready();
+}
+
+export function getInitData(): string | null {
+  const tg = (window as any).Telegram?.WebApp;
+  return tg?.initData || null;
+}
+
+export function parseUserFromInitData(initData: string) {
   try {
-    window?.Telegram?.WebApp?.ready?.();
-    window?.Telegram?.WebApp?.expand?.();
-  } catch {}
+    const params = new URLSearchParams(initData);
+    const userStr = params.get('user');
+    return userStr ? JSON.parse(userStr) : null;
+  } catch {
+    return null;
+  }
 }
